@@ -4,35 +4,66 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.websocket.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import org.distributed.calendar.core.device.DeviceManager
 import org.distributed.calendar.core.model.*
 
-class WebSocketClient {
+class WebSocketClient(private val host: String) {
 
   private val client = HttpClient(CIO) { install(WebSockets) }
 
-  suspend fun connect() {
+  suspend fun connect() = coroutineScope {
+    while (true) {
 
-    client.webSocket(host = "127.0.0.1", port = 8080, path = "/sync") {
-      println("Connected to server")
+      try {
 
-      val packet =
-              SyncPacket(
-                      type = PacketType.HEARTBEAT,
-                      deviceId = "android-01",
-                      timestamp = System.currentTimeMillis(),
-                      payload = ""
-              )
+        println("Connecting to server...")
 
-      val serialized = PacketSerializer.serialize(packet)
+        client.webSocket(host = host, port = 8080, path = "/sync") {
+          println("Connected to server")
 
-      send(Frame.Text(serialized))
+          launch {
+            while (true) {
 
-      for (message in incoming) {
+              val packet =
+                      SyncPacket(
+                              type = PacketType.HEARTBEAT,
+                              deviceId = DeviceManager.deviceId,
+                              timestamp = System.currentTimeMillis(),
+                              payload = ""
+                      )
 
-        if (message is Frame.Text) {
+              val serialized = PacketSerializer.serialize(packet)
 
-          println("Received: ${message.readText()}")
+              send(Frame.Text(serialized))
+
+              println("Heartbeat sent")
+
+              delay(5000)
+            }
+          }
+
+          for (message in incoming) {
+
+            if (message is Frame.Text) {
+
+              println("Received: ${message.readText()}")
+            }
+          }
         }
+      } catch (e: CancellationException) {
+
+        throw e
+      } catch (e: Exception) {
+
+        println("Connection lost: ${e.message}")
+
+        println("Reconnecting in 5 seconds...")
+
+        delay(5000)
       }
     }
   }

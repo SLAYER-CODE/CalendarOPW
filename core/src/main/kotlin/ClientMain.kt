@@ -1,9 +1,13 @@
 import kotlinx.coroutines.runBlocking
 import org.distributed.calendar.core.network.WebSocketClient
+import org.distributed.calendar.core.network.discovery.DiscoveryListener
 
 fun main() = runBlocking {
+  val serverIp = DiscoveryListener().startListening()
 
-    val client = WebSocketClient()
+  println("Server discovered at: $serverIp")
 
-    client.connect()
+  val client = WebSocketClient(serverIp)
+
+  client.connect()
 }

@@ -6,6 +6,7 @@ import io.ktor.server.netty.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import org.distributed.calendar.core.device.DeviceRegistry
 import org.distributed.calendar.core.sync.SyncEngine
 
 class WebSocketServer {
@@ -26,11 +27,12 @@ class WebSocketServer {
                     if (frame is Frame.Text) {
 
                       val text = frame.readText()
-
                       val packet = PacketSerializer.deserialize(text)
 
-                      syncEngine.applyPacket(packet)
+                      DeviceRegistry.heartbeat(packet.deviceId)
 
+                      syncEngine.applyPacket(packet)
+                      println(DeviceRegistry.getOnlineDevices())
                       println("Received packet: $packet")
                     }
                   }
