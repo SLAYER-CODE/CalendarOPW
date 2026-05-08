@@ -121,17 +121,17 @@ Clone the repository:
 
 ```bash
 git clone git@github.com:SLAYER-CODE/CalendarOPW.git
-
+```
 Run the project:
 
 ```bash
 ./gradlew run
-
+```
 Build:
 
 ```bash
 ./gradlew build
-
+```
 
 ## 📂 Project Goals
 
