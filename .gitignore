@@ -1,8 +1,50 @@
-# Ignore Gradle project-specific cache directory
-.gradle
+# Gradle
+.gradle/
+build/
 
-# Ignore Gradle build output directory
-build
+# IntelliJ / Android Studio
+.idea/
+*.iml
 
-# Ignore Kotlin plugin data
-.kotlin
+# VSCode
+.vscode/
+
+# Kotlin
+*.kotlin_module
+
+# Local Android SDK config
+local.properties
+
+# JVM crash dumps
+*.hprof
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Android
+captures/
+.externalNativeBuild/
+.cxx/
+
+# Generated
+out/
+
+# Keystores
+*.jks
+*.keystore
+
+# Env
+.env
+
+# SQLite
+*.db
+*.sqlite
+*.sqlite3
+
+# KSP / kapt
+ksp/
+generated/
