@@ -1,0 +1,38 @@
+CREATE TABLE events (
+
+    id TEXT NOT NULL PRIMARY KEY,
+
+    title TEXT NOT NULL,
+
+    description TEXT NOT NULL,
+
+    timestamp INTEGER NOT NULL,
+
+    duration INTEGER NOT NULL,
+
+    priority INTEGER NOT NULL,
+
+    sourceDeviceId TEXT NOT NULL,
+
+    updatedAt INTEGER NOT NULL
+);
+
+selectAll:
+SELECT * FROM events;
+
+insertEvent:
+INSERT OR REPLACE INTO events(
+    id,
+    title,
+    description,
+    timestamp,
+    duration,
+    priority,
+    sourceDeviceId,
+    updatedAt
+)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?);
+
+deleteEvent:
+DELETE FROM events
+WHERE id = ?;

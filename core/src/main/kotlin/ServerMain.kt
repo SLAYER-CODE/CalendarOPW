@@ -1,15 +1,21 @@
-import org.distributed.calendar.core.network.WebSocketServer
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.launch
-
-import org.distributed.calendar.core.network.discovery.DiscoveryBroadcaster
+import kotlinx.coroutines.runBlocking
 import org.distributed.calendar.core.network.WebSocketServer
+import org.distributed.calendar.core.network.discovery.DiscoveryBroadcaster
+import kotlinx.coroutines.delay
 fun main() = runBlocking {
 
     launch {
-
-        DiscoveryBroadcaster().startBroadcast()
+        DiscoveryBroadcaster()
+            .startBroadcast()
     }
 
-    WebSocketServer().startWebSocketServer()
+    launch {
+        WebSocketServer()
+            .startWebSocketServer()
+    }
+
+    while (true) {
+        delay(1000)
+    }
 }

@@ -1,7 +1,8 @@
 plugins {
-  kotlin("jvm")
-  kotlin("plugin.serialization") version "2.0.21"
-  id("application")
+    kotlin("jvm")
+    kotlin("plugin.serialization")
+    id("app.cash.sqldelight")
+    id("application")
 }
 
 group = "org.distributed.calendar"
@@ -12,7 +13,11 @@ repositories { mavenCentral() }
 
 dependencies {
   implementation(kotlin("stdlib"))
+implementation(
+    "app.cash.sqldelight:sqlite-driver:2.0.2"
 
+)
+implementation("app.cash.sqldelight:coroutines-extensions-jvm:2.0.2")
   implementation("io.ktor:ktor-server-core-jvm:2.3.12")
   implementation("io.ktor:ktor-server-websockets-jvm:2.3.12")
   implementation("io.ktor:ktor-server-netty-jvm:2.3.12")
@@ -26,17 +31,29 @@ dependencies {
 
 // application { mainClass.set("MainKt") }
 
-
 tasks.register<JavaExec>("runServer") {
-    group = "application"
-    mainClass.set("ServerMainKt")
+  group = "application"
+  mainClass.set("ServerMainKt")
 
-    classpath = sourceSets["main"].runtimeClasspath
+  classpath = sourceSets["main"].runtimeClasspath
 }
 
 tasks.register<JavaExec>("runClient") {
-    group = "application"
-    mainClass.set("ClientMainKt")
+  group = "application"
+  mainClass.set("ClientMainKt")
 
-    classpath = sourceSets["main"].runtimeClasspath
+  classpath = sourceSets["main"].runtimeClasspath
+}
+
+sqldelight {
+
+    databases {
+
+        register("CalendarDatabase") {
+
+            packageName.set(
+                "org.distributed.calendar.db"
+            )
+        }
+    }
 }

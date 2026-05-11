@@ -4,6 +4,7 @@ import io.ktor.client.*
 import io.ktor.client.engine.cio.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.websocket.*
+import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -11,6 +12,7 @@ import kotlinx.coroutines.launch
 import org.distributed.calendar.core.device.DeviceManager
 import org.distributed.calendar.core.model.*
 
+import org.distributed.calendar.core.sync.PendingPacketStore
 class WebSocketClient(private val host: String) {
 
   private val client = HttpClient(CIO) { install(WebSockets) }
@@ -30,6 +32,7 @@ class WebSocketClient(private val host: String) {
 
               val packet =
                       SyncPacket(
+                              packetId = UUID.randomUUID().toString(),
                               type = PacketType.HEARTBEAT,
                               deviceId = DeviceManager.deviceId,
                               timestamp = System.currentTimeMillis(),
@@ -38,6 +41,7 @@ class WebSocketClient(private val host: String) {
 
               val serialized = PacketSerializer.serialize(packet)
 
+              PendingPacketStore.add(packet)
               send(Frame.Text(serialized))
 
               println("Heartbeat sent")
@@ -50,7 +54,35 @@ class WebSocketClient(private val host: String) {
 
             if (message is Frame.Text) {
 
-              println("Received: ${message.readText()}")
+              val text = message.readText()
+
+              val packet = PacketSerializer.deserialize(text)
+
+              println("Received packet: $packet")
+
+              if (packet.type == PacketType.ACK) {
+
+                PendingPacketStore.acknowledge(packet.payload)
+
+                println("Packet acknowledged: ${packet.payload}")
+
+                continue
+              }
+
+              val ackPacket =
+                      SyncPacket(
+                              packetId = UUID.randomUUID().toString(),
+                              type = PacketType.ACK,
+                              deviceId = DeviceManager.deviceId,
+                              timestamp = System.currentTimeMillis(),
+                              payload = packet.packetId
+                      )
+
+              val serializedAck = PacketSerializer.serialize(ackPacket)
+
+              send(Frame.Text(serializedAck))
+
+              println("ACK sent for: ${packet.packetId}")
             }
           }
         }

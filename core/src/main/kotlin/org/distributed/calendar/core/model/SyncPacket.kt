@@ -4,6 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class SyncPacket(
+    val packetId: String,
     val type: PacketType,
     val deviceId: String,
     val timestamp: Long,
@@ -17,5 +18,6 @@ enum class PacketType {
     EVENT_UPDATE,
     EVENT_DELETE,
     SYNC_REQUEST,
-    SYNC_RESPONSE
+    SYNC_RESPONSE,
+    ACK
 }
