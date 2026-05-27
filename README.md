@@ -12,7 +12,8 @@ Built with modern Kotlin technologies including Jetpack Compose Multiplatform, W
 - 📡 Automatic reconnection system for unstable networks
 - 💻 Cross-platform support:
   - Android
-  - Linux
+- Linux
+  - Linux (linuxApp module)
   - Windows
   - Desktop JVM
 - 🔔 High-priority notifications designed to never be missed

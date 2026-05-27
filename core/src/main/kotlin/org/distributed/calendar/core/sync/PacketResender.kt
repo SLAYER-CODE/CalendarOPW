@@ -8,7 +8,7 @@ class PacketResender {
 
         while (true) {
 
-            PendingPacketStore
+            org.distributed.calendar.common.PendingPacketStore
                 .getPending()
                 .forEach {
 
