@@ -1,11 +1,12 @@
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.BitmapPainter
+import androidx.compose.ui.graphics.toComposeImageBitmap
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Tray
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
@@ -29,7 +30,9 @@ import org.distributed.calendar.linux.ui.LinuxDesktopApp
 import org.distributed.calendar.ui.model.EventUiModel
 import org.distributed.calendar.ui.model.PeerUiModel
 import org.distributed.calendar.ui.theme.CalendarTheme
+import java.awt.Color
 import java.awt.Toolkit
+import java.awt.image.BufferedImage
 import java.io.File
 
 private fun Event.toUiModel() = EventUiModel(
@@ -47,6 +50,15 @@ private fun Device.toPeerUiModel() = PeerUiModel(
     name = name,
     isOnline = DeviceRegistry.isOnline(deviceId)
 )
+
+private fun createTrayIcon(): BitmapPainter {
+    val img = BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB)
+    val g = img.createGraphics()
+    g.color = Color(123, 31, 162)
+    g.fillRect(0, 0, 16, 16)
+    g.dispose()
+    return BitmapPainter(img.toComposeImageBitmap())
+}
 
 fun main() {
     val screen = Toolkit.getDefaultToolkit().screenSize
@@ -87,29 +99,42 @@ fun main() {
             width = screen.width.dp,
             height = screen.height.dp
         )
-        Window(
-            onCloseRequest = ::exitApplication,
-            title = "Distributed Calendar — Linux",
-            state = windowState
-        ) {
-            CalendarTheme {
-                var events by remember { mutableStateOf(listOf<EventUiModel>()) }
-                var peers by remember { mutableStateOf(listOf<PeerUiModel>()) }
+        var isVisible by remember { mutableStateOf(true) }
+        var events by remember { mutableStateOf(listOf<EventUiModel>()) }
+        var peers by remember { mutableStateOf(listOf<PeerUiModel>()) }
 
-                LaunchedEffect(syncEngine) {
-                    syncEngine.addChangeListener {
-                        events = syncEngine.getEvents().map { it.toUiModel() }
-                        peers = syncEngine.getDevices().map { it.toPeerUiModel() }
-                    }
+        LaunchedEffect(syncEngine) {
+            syncEngine.addChangeListener {
+                events = syncEngine.getEvents().map { it.toUiModel() }
+                peers = syncEngine.getDevices().map { it.toPeerUiModel() }
+            }
+        }
+
+        Tray(
+            icon = createTrayIcon(),
+            tooltip = "Distributed Calendar",
+            onAction = { isVisible = !isVisible },
+            menu = {
+                Item("Show") { isVisible = true }
+                Item("Quit") { exitApplication() }
+            }
+        )
+
+        if (isVisible) {
+            Window(
+                onCloseRequest = { isVisible = false },
+                title = "Distributed Calendar — Linux",
+                state = windowState
+            ) {
+                CalendarTheme {
+                    LinuxDesktopApp(
+                        events = events,
+                        peers = peers,
+                        onCreateEvent = { title, description, duration ->
+                            syncEngine.createEvent(title, description, duration)
+                        }
+                    )
                 }
-
-                LinuxDesktopApp(
-                    events = events,
-                    peers = peers,
-                    onCreateEvent = { title, description, duration ->
-                        syncEngine.createEvent(title, description, duration)
-                    }
-                )
             }
         }
     }
