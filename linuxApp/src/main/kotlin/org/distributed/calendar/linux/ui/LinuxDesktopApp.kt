@@ -1,7 +1,10 @@
 package org.distributed.calendar.linux.ui
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,7 +40,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.distributed.calendar.ui.components.AppSidebar
 import org.distributed.calendar.ui.components.SidebarTab
-import org.distributed.calendar.ui.currentTimeMillis
 import org.distributed.calendar.ui.model.EventUiModel
 import org.distributed.calendar.ui.model.PeerUiModel
 
@@ -48,11 +50,13 @@ private val tabs = listOf(
 )
 
 @Composable
-fun LinuxDesktopApp() {
+fun LinuxDesktopApp(
+    events: List<EventUiModel>,
+    peers: List<PeerUiModel>,
+    onCreateEvent: (title: String, description: String, duration: Long) -> Unit
+) {
     var selectedTabId by remember { mutableStateOf("events") }
     var isExpanded by remember { mutableStateOf(true) }
-    var events by remember { mutableStateOf(sampleEvents()) }
-    var peers by remember { mutableStateOf(samplePeers()) }
 
     Row(modifier = Modifier.fillMaxSize()) {
         AppSidebar(
@@ -67,22 +71,27 @@ fun LinuxDesktopApp() {
                 .fillMaxSize()
                 .background(Color.White)
         ) {
-            when (selectedTabId) {
-                "events" -> EventsPanel(
-                    events = events,
-                    onCreateClick = { selectedTabId = "new_event" }
-                )
-                "new_event" -> NewEventPanel(
-                    onSave = { title, description, duration ->
-                        val now = currentTimeMillis()
-                        events = listOf(
-                            EventUiModel("evt_$now", title, description, now, duration, 0, "local")
-                        ) + events
-                        selectedTabId = "events"
-                    },
-                    onCancel = { selectedTabId = "events" }
-                )
-                "peers" -> PeersPanel(peers = peers)
+            AnimatedContent(
+                targetState = selectedTabId,
+                transitionSpec = {
+                    fadeIn() togetherWith fadeOut()
+                },
+                label = "panel_transition"
+            ) { tabId ->
+                when (tabId) {
+                    "events" -> EventsPanel(
+                        events = events,
+                        onCreateClick = { selectedTabId = "new_event" }
+                    )
+                    "new_event" -> NewEventPanel(
+                        onSave = { title, description, duration ->
+                            onCreateEvent(title, description, duration)
+                            selectedTabId = "events"
+                        },
+                        onCancel = { selectedTabId = "events" }
+                    )
+                    "peers" -> PeersPanel(peers = peers)
+                }
             }
         }
     }
@@ -114,6 +123,37 @@ private fun EventsPanel(
             }
         }
         HorizontalDivider(color = Color(0xFFD0D0D0))
+
+        if (events.isEmpty()) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("No events yet.", color = Color(0xFF888888), fontSize = 14.sp)
+            }
+        } else {
+            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(events, key = { it.id }) { event ->
+                    EventRow(event)
+                    HorizontalDivider(color = Color(0xFFE8E8E8))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun EventRow(event: EventUiModel) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 24.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(event.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            if (event.description.isNotBlank()) {
+                Spacer(Modifier.height(2.dp))
+                Text(event.description, fontSize = 13.sp, color = Color(0xFF666666))
+            }
+        }
     }
 }
 
@@ -255,20 +295,3 @@ private fun PeerTableRow(peer: PeerUiModel) {
         }
     }
 }
-
-// ─── Sample Data ────────────────────────────────────────────────────────────
-
-private fun sampleEvents(): List<EventUiModel> {
-    val now = currentTimeMillis()
-    return listOf(
-        EventUiModel("1", "Team Standup", "Daily sync meeting", now + 3600000, 30, 1, "desktop-1"),
-        EventUiModel("2", "Lunch", "Lunch break", now + 7200000, 60, 0, "phone-2"),
-        EventUiModel("3", "Project Review", "Q2 milestone review", now + 10800000, 45, 2, "desktop-1")
-    )
-}
-
-private fun samplePeers(): List<PeerUiModel> = listOf(
-    PeerUiModel("desktop-1", "Main Desktop", true),
-    PeerUiModel("phone-2", "Android Phone", false),
-    PeerUiModel("laptop-3", "Work Laptop", true)
-)

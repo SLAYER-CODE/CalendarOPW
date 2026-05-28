@@ -1,5 +1,10 @@
 package org.distributed.calendar.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.hoverable
@@ -42,11 +47,14 @@ fun AppSidebar(
     onToggle: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val sidebarWidth = if (isExpanded) 220.dp else 64.dp
+    val animatedWidth by animateDpAsState(
+        targetValue = if (isExpanded) 220.dp else 64.dp,
+        animationSpec = tween(300)
+    )
 
     Box(
         modifier = modifier
-            .width(sidebarWidth)
+            .width(animatedWidth)
             .fillMaxHeight()
             .background(Color(0xFF7B1FA2))
     ) {
@@ -71,15 +79,22 @@ fun AppSidebar(
 
             Spacer(Modifier.weight(1f))
 
-            if (isExpanded) {
-                HorizontalDivider(color = Color.White.copy(alpha = 0.2f))
-                Spacer(Modifier.height(8.dp))
-                Text(
-                    text = "v1.0",
-                    color = Color.White.copy(alpha = 0.5f),
-                    fontSize = 12.sp,
-                    modifier = Modifier.padding(start = 12.dp)
-                )
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = fadeIn(animationSpec = tween(200)),
+                exit = fadeOut(animationSpec = tween(200))
+            ) {
+                Column {
+                    Spacer(Modifier.height(8.dp))
+                    HorizontalDivider(color = Color.White.copy(alpha = 0.2f))
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = "v1.0",
+                        color = Color.White.copy(alpha = 0.5f),
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(start = 12.dp)
+                    )
+                }
             }
         }
     }
@@ -95,29 +110,45 @@ private fun ToggleButton(
 
     val bgColor = if (isHovered) Color.White.copy(alpha = 0.12f) else Color.Transparent
 
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .hoverable(interactionSource)
-            .clickable(onClick = onToggle)
-            .background(bgColor, RoundedCornerShape(8.dp))
-            .padding(horizontal = if (isExpanded) 12.dp else 8.dp, vertical = 8.dp)
-    ) {
-        if (isExpanded) {
+    if (isExpanded) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .hoverable(interactionSource)
+                .clickable(onClick = onToggle)
+                .background(bgColor, RoundedCornerShape(8.dp))
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text("☰", color = Color.White, fontSize = 20.sp)
-                Spacer(Modifier.width(10.dp))
-                Text(
-                    text = "Calendar",
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold
-                )
+                AnimatedVisibility(
+                    visible = isExpanded,
+                    enter = fadeIn(animationSpec = tween(200)),
+                    exit = fadeOut(animationSpec = tween(200))
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Spacer(Modifier.width(10.dp))
+                        Text(
+                            text = "Calendar",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
             }
-        } else {
-            Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
-                Text("☰", color = Color.White, fontSize = 20.sp)
-            }
+        }
+    } else {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .hoverable(interactionSource)
+                .clickable(onClick = onToggle)
+                .background(bgColor, RoundedCornerShape(8.dp))
+                .padding(vertical = 8.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Text("☰", color = Color.White, fontSize = 20.sp)
         }
     }
 }

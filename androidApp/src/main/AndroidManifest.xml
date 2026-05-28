@@ -11,7 +11,8 @@
 
     <application
         android:label="Distributed Calendar"
-        android:theme="@style/Theme.DistributedCalendar">
+        android:theme="@style/Theme.DistributedCalendar"
+        android:usesCleartextTraffic="true">
 
         <activity
             android:name=".MainActivity"
