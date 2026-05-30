@@ -8,7 +8,8 @@ data class Device(
     val name: String,
     val type: DeviceType,
     val lastSeen: Long,
-    val isOnline: Boolean
+    val isOnline: Boolean,
+    val ip: String = ""
 )
 
 @Serializable

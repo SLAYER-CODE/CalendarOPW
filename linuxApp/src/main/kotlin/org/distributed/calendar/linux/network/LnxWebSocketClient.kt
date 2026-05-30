@@ -115,6 +115,10 @@ class LnxWebSocketClient(
                                         continue
                                     }
 
+                                    if (packet.type == PacketType.SYNC_RESPONSE) {
+                                        syncEngine?.updateDeviceIp(packet.deviceId, host)
+                                    }
+
                                     syncEngine?.applyPacket(packet)
 
                                     // Send ACK for non-ACK packets

@@ -19,5 +19,6 @@ data class EventUiModel(
 data class PeerUiModel(
     val deviceId: String,
     val name: String,
-    val isOnline: Boolean
+    val isOnline: Boolean,
+    val ip: String = ""
 )

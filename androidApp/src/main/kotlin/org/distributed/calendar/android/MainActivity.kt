@@ -10,6 +10,10 @@ import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -43,7 +47,8 @@ private fun Event.toUiModel() = EventUiModel(
 private fun Device.toPeerUiModel() = PeerUiModel(
     deviceId = deviceId,
     name = name,
-    isOnline = DeviceRegistry.isOnline(deviceId)
+    isOnline = DeviceRegistry.isOnline(deviceId),
+    ip = ip
 )
 
 class MainActivity : ComponentActivity() {
@@ -117,9 +122,9 @@ class MainActivity : ComponentActivity() {
                 Row(Modifier.fillMaxSize()) {
                     AppSidebar(
                         tabs = listOf(
-                            SidebarTab("events", "Events", "📅"),
-                            SidebarTab("new_event", "New Event", "➕"),
-                            SidebarTab("peers", "Peers", "👥")
+                            SidebarTab("events", "Events", Icons.Default.DateRange),
+                            SidebarTab("new_event", "New Event", Icons.Default.Add),
+                            SidebarTab("peers", "Peers", Icons.Default.Person)
                         ),
                         selectedTabId = when (currentScreen) {
                             Screen.EVENT_LIST -> "events"

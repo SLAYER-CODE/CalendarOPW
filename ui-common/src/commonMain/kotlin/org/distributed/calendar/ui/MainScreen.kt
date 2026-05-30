@@ -38,8 +38,8 @@ fun MainScreen(
             slideInHorizontally { it } + fadeIn() togetherWith slideOutHorizontally { -it } + fadeOut()
         },
         label = "screen_transition"
-    ) { currentScreen ->
-        when (currentScreen) {
+    ) { targetScreen ->
+        when (targetScreen) {
             Screen.EVENT_LIST -> {
                 EventListScreen(
                     events = events,

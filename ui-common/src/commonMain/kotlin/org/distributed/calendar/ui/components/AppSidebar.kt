@@ -20,7 +20,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -28,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -35,7 +39,7 @@ import androidx.compose.ui.unit.sp
 data class SidebarTab(
     val id: String,
     val label: String,
-    val emoji: String
+    val icon: ImageVector
 )
 
 @Composable
@@ -56,7 +60,7 @@ fun AppSidebar(
         modifier = modifier
             .width(animatedWidth)
             .fillMaxHeight()
-            .background(Color(0xFF7B1FA2))
+            .background(Color(0xFF0A0A0A))
     ) {
         Column(
             modifier = Modifier
@@ -120,7 +124,7 @@ private fun ToggleButton(
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("☰", color = Color.White, fontSize = 20.sp)
+                Icon(Icons.Default.Menu, contentDescription = "Toggle menu", tint = Color.White)
                 AnimatedVisibility(
                     visible = isExpanded,
                     enter = fadeIn(animationSpec = tween(200)),
@@ -148,7 +152,7 @@ private fun ToggleButton(
                 .padding(vertical = 8.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text("☰", color = Color.White, fontSize = 20.sp)
+            Icon(Icons.Default.Menu, contentDescription = "Toggle menu", tint = Color.White)
         }
     }
 }
@@ -179,7 +183,7 @@ private fun NavItem(
                 .padding(horizontal = 12.dp, vertical = 10.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(tab.emoji, fontSize = 20.sp)
+                Icon(tab.icon, contentDescription = tab.label, tint = Color.White)
                 Spacer(Modifier.width(10.dp))
                 Text(
                     text = tab.label,
@@ -199,7 +203,7 @@ private fun NavItem(
                 .padding(vertical = 10.dp),
             contentAlignment = Alignment.Center
         ) {
-            Text(tab.emoji, fontSize = 20.sp)
+            Icon(tab.icon, contentDescription = tab.label, tint = Color.White)
         }
     }
 }

@@ -10,7 +10,7 @@ import org.distributed.calendar.core.discovery.DiscoveryListener
 
 class AndroidDiscoveryListener : DiscoveryListener {
 
-    private val localAddresses = NetworkUtils.getLocalIPv4Addresses()
+    private val localAddresses = NetworkUtils.getAllLocalIPv4Addresses()
 
     override suspend fun listen(): String? = withContext(Dispatchers.IO) {
         val socket = DatagramSocket(9999)

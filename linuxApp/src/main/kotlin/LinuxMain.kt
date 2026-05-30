@@ -22,6 +22,7 @@ import org.distributed.calendar.common.TcpPeerScanner
 import org.distributed.calendar.common.model.Device
 import org.distributed.calendar.common.model.Event
 import org.distributed.calendar.core.device.DeviceRegistry
+import org.distributed.calendar.core.device.KnownPeersStore
 import org.distributed.calendar.core.sync.PacketResender
 import org.distributed.calendar.core.sync.SyncEngine
 import org.distributed.calendar.linux.LinuxNotifier
@@ -50,7 +51,8 @@ private fun Event.toUiModel() = EventUiModel(
 private fun Device.toPeerUiModel() = PeerUiModel(
     deviceId = deviceId,
     name = name,
-    isOnline = DeviceRegistry.isOnline(deviceId)
+    isOnline = DeviceRegistry.isOnline(deviceId),
+    ip = ip
 )
 
 private fun createTrayIcon(): BitmapPainter {
@@ -69,6 +71,8 @@ fun main() {
     PendingPacketStore.setPersistDir(File("pending_packets"))
 
     val syncEngine = SyncEngine()
+    syncEngine.knownPeersStore = KnownPeersStore(File("known_peers.json"))
+    syncEngine.loadKnownPeers()
     val scope = CoroutineScope(Dispatchers.IO)
     val knownEventIds = mutableSetOf<String>()
 
@@ -85,7 +89,7 @@ fun main() {
                 serverIp = TcpPeerScanner.scan(8080)
             }
             if (serverIp != null) {
-                val localIPs = NetworkUtils.getLocalIPv4Addresses()
+                val localIPs = NetworkUtils.getAllLocalIPv4Addresses()
                 if (serverIp in localIPs) {
                     println("Ignoring self-IP: $serverIp")
                     delay(5_000)

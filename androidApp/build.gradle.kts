@@ -68,4 +68,5 @@ dependencies {
     // Compose (AndroidX) — needed for Row, fillMaxSize, weight, etc.
     implementation("androidx.compose.foundation:foundation:1.6.7")
     implementation("androidx.compose.ui:ui:1.6.7")
+    implementation("androidx.compose.material:material-icons-core:1.6.0")
 }

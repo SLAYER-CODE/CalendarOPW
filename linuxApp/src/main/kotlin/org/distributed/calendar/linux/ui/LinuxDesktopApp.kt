@@ -24,6 +24,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,11 +43,15 @@ import org.distributed.calendar.ui.components.AppSidebar
 import org.distributed.calendar.ui.components.SidebarTab
 import org.distributed.calendar.ui.model.EventUiModel
 import org.distributed.calendar.ui.model.PeerUiModel
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Person
 
 private val tabs = listOf(
-    SidebarTab("events", "Events", "📅"),
-    SidebarTab("new_event", "New Event", "➕"),
-    SidebarTab("peers", "Peers", "👥")
+    SidebarTab("events", "Events", Icons.Default.DateRange),
+    SidebarTab("new_event", "New Event", Icons.Default.Add),
+    SidebarTab("peers", "Peers", Icons.Default.Person)
 )
 
 @Composable
@@ -69,7 +74,7 @@ fun LinuxDesktopApp(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.White)
+                .background(MaterialTheme.colorScheme.background)
         ) {
             AnimatedContent(
                 targetState = selectedTabId,
@@ -104,11 +109,11 @@ private fun EventsPanel(
     events: List<EventUiModel>,
     onCreateClick: () -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFF5F5F5))
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 24.dp, vertical = 14.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -116,23 +121,24 @@ private fun EventsPanel(
                 text = "Events",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.weight(1f)
             )
             Button(onClick = onCreateClick) {
                 Text("  + New Event  ")
             }
         }
-        HorizontalDivider(color = Color(0xFFD0D0D0))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
         if (events.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("No events yet.", color = Color(0xFF888888), fontSize = 14.sp)
+                Text("No events yet.", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
             }
         } else {
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(events, key = { it.id }) { event ->
                     EventRow(event)
-                    HorizontalDivider(color = Color(0xFFE8E8E8))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
         }
@@ -148,10 +154,10 @@ private fun EventRow(event: EventUiModel) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
-            Text(event.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold)
+            Text(event.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onBackground)
             if (event.description.isNotBlank()) {
                 Spacer(Modifier.height(2.dp))
-                Text(event.description, fontSize = 13.sp, color = Color(0xFF666666))
+                Text(event.description, fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -171,14 +177,14 @@ private fun NewEventPanel(
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color.White)
+            .background(MaterialTheme.colorScheme.background)
             .verticalScroll(rememberScrollState())
             .padding(32.dp)
     ) {
-        Text("New Event", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = Color(0xFF222222))
+        Text("New Event", fontSize = 22.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
         Spacer(Modifier.height(28.dp))
 
-        Text("Title", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF555555))
+        Text("Title", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = title,
@@ -190,7 +196,7 @@ private fun NewEventPanel(
 
         Spacer(Modifier.height(20.dp))
 
-        Text("Description", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF555555))
+        Text("Description", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = description,
@@ -202,7 +208,7 @@ private fun NewEventPanel(
 
         Spacer(Modifier.height(20.dp))
 
-        Text("Duration (minutes)", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF555555))
+        Text("Duration (minutes)", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = durationText,
@@ -235,38 +241,38 @@ private fun NewEventPanel(
 
 @Composable
 private fun PeersPanel(peers: List<PeerUiModel>) {
-    Column(modifier = Modifier.fillMaxSize().background(Color.White)) {
+    Column(modifier = Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFF5F5F5))
+                .background(MaterialTheme.colorScheme.surface)
                 .padding(horizontal = 24.dp, vertical = 14.dp)
         ) {
-            Text("Peers", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text("Peers", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onBackground)
         }
-        HorizontalDivider(color = Color(0xFFD0D0D0))
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
         if (peers.isEmpty()) {
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Waiting for UDP discovery...", color = Color(0xFF888888), fontSize = 14.sp)
+                Text("Waiting for UDP discovery...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
             }
         } else {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(Color(0xFFEEEEEE))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .padding(horizontal = 24.dp, vertical = 10.dp)
             ) {
-                Text("Device", Modifier.weight(2f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF555555))
-                Text("Name", Modifier.weight(2f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF555555))
-                Text("Status", Modifier.weight(1f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF555555))
+                Text("Device", Modifier.weight(2f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Name", Modifier.weight(2f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text("Status", Modifier.weight(1f), fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            HorizontalDivider(color = Color(0xFFD0D0D0))
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
             LazyColumn(modifier = Modifier.fillMaxSize()) {
                 items(peers, key = { it.deviceId }) { peer ->
                     PeerTableRow(peer)
-                    HorizontalDivider(color = Color(0xFFE8E8E8))
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 }
             }
         }
@@ -281,8 +287,8 @@ private fun PeerTableRow(peer: PeerUiModel) {
             .padding(horizontal = 24.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(peer.deviceId, Modifier.weight(2f), fontSize = 14.sp)
-        Text(peer.name, Modifier.weight(2f), fontSize = 14.sp, color = Color(0xFF444444))
+        Text(peer.deviceId, Modifier.weight(2f), fontSize = 14.sp, color = MaterialTheme.colorScheme.onBackground)
+        Text(peer.name, Modifier.weight(2f), fontSize = 14.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             val dotColor = if (peer.isOnline) Color(0xFF43A047) else Color(0xFFE53935)
             Box(Modifier.size(8.dp).background(dotColor, RoundedCornerShape(4.dp)))

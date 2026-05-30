@@ -42,11 +42,21 @@ fun PeerCard(
                     text = peer.name,
                     style = MaterialTheme.typography.bodyLarge
                 )
-                Text(
-                    text = if (peer.isOnline) "Online" else "Offline",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                Row {
+                    if (peer.ip.isNotEmpty()) {
+                        Text(
+                            text = peer.ip,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                    }
+                    Text(
+                        text = if (peer.isOnline) "Online" else "Offline",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
         }
     }

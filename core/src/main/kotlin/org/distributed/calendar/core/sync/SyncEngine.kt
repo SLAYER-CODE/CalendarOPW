@@ -9,6 +9,7 @@ import org.distributed.calendar.common.PacketSerializer
 import org.distributed.calendar.common.PendingPacketStore
 import org.distributed.calendar.common.model.*
 import org.distributed.calendar.core.device.DeviceRegistry
+import org.distributed.calendar.core.device.KnownPeersStore
 import org.distributed.calendar.core.event.EventRepository
 import org.distributed.calendar.core.network.SessionRegistry
 
@@ -70,6 +71,44 @@ class SyncEngine(
 
     fun getDevices(): List<Device> = devices.values.toList()
 
+    var knownPeersStore: KnownPeersStore? = null
+
+    fun loadKnownPeers() {
+        val stored = knownPeersStore?.load() ?: emptyList()
+        for (device in stored) {
+            if (!devices.containsKey(device.deviceId)) {
+                devices[device.deviceId] = device.copy(isOnline = false)
+            }
+        }
+        if (stored.isNotEmpty()) notifyChange()
+    }
+
+    fun updateDeviceIp(deviceId: String, ip: String) {
+        val device = devices[deviceId] ?: return
+        devices[deviceId] = device.copy(ip = ip)
+        notifyChange()
+    }
+
+    // ─── Device tracking ──────────────────────────────────────────────────
+
+    private fun registerDevice(packet: SyncPacket) {
+        val existing = devices[packet.deviceId]
+        if (existing != null) {
+            devices[packet.deviceId] = existing.copy(lastSeen = packet.timestamp, isOnline = true)
+        } else {
+            val newDevice = Device(
+                deviceId = packet.deviceId,
+                name = packet.deviceId,
+                type = DeviceType.ANDROID,
+                lastSeen = packet.timestamp,
+                isOnline = true
+            )
+            devices[packet.deviceId] = newDevice
+            knownPeersStore?.save(newDevice)
+        }
+        DeviceRegistry.heartbeat(packet.deviceId)
+    }
+
     // ─── Packet handlers ────────────────────────────────────────────────────
 
     private fun handleAck(packet: SyncPacket) {
@@ -78,19 +117,7 @@ class SyncEngine(
     }
 
     private fun handleHeartbeat(packet: SyncPacket) {
-        val device = devices[packet.deviceId]
-        if (device != null) {
-            devices[packet.deviceId] = device.copy(lastSeen = packet.timestamp, isOnline = true)
-        } else {
-            devices[packet.deviceId] = Device(
-                deviceId = packet.deviceId,
-                name = packet.deviceId,
-                type = DeviceType.ANDROID,
-                lastSeen = packet.timestamp,
-                isOnline = true
-            )
-        }
-        DeviceRegistry.heartbeat(packet.deviceId)
+        registerDevice(packet)
         notifyChange()
     }
 
@@ -135,19 +162,7 @@ class SyncEngine(
     }
 
     private fun handleSyncRequest(packet: SyncPacket) {
-        val device = devices[packet.deviceId]
-        if (device != null) {
-            devices[packet.deviceId] = device.copy(lastSeen = packet.timestamp, isOnline = true)
-        } else {
-            devices[packet.deviceId] = Device(
-                deviceId = packet.deviceId,
-                name = packet.deviceId,
-                type = DeviceType.ANDROID,
-                lastSeen = packet.timestamp,
-                isOnline = true
-            )
-        }
-        DeviceRegistry.heartbeat(packet.deviceId)
+        registerDevice(packet)
 
         val allEvents = events.values.toList()
         val payload = json.encodeToString(allEvents)
@@ -169,19 +184,7 @@ class SyncEngine(
     }
 
     private fun handleSyncResponse(packet: SyncPacket) {
-        val device = devices[packet.deviceId]
-        if (device != null) {
-            devices[packet.deviceId] = device.copy(lastSeen = packet.timestamp, isOnline = true)
-        } else {
-            devices[packet.deviceId] = Device(
-                deviceId = packet.deviceId,
-                name = packet.deviceId,
-                type = DeviceType.ANDROID,
-                lastSeen = packet.timestamp,
-                isOnline = true
-            )
-        }
-        DeviceRegistry.heartbeat(packet.deviceId)
+        registerDevice(packet)
 
         val remoteEvents: List<Event> = json.decodeFromString(packet.payload)
         var merged = 0

@@ -6,6 +6,7 @@ import io.ktor.server.netty.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
+import java.net.InetSocketAddress
 import java.util.UUID
 import org.distributed.calendar.common.DeviceManager
 import org.distributed.calendar.common.model.*
@@ -48,6 +49,12 @@ class AndroidWebSocketServer(
                                 SessionRegistry.register(packet.deviceId, peerSession)
                                 DeviceRegistry.heartbeat(packet.deviceId)
                                 syncEngine.applyPacket(packet)
+                                val theCall = call
+                                val remoteIp = if (theCall is NettyApplicationCall) {
+                                    val addr = theCall.context.channel().remoteAddress()
+                                    if (addr is InetSocketAddress) addr.hostString else addr.toString()
+                                } else ""
+                                syncEngine.updateDeviceIp(packet.deviceId, remoteIp)
                                 if (packet.type != PacketType.ACK) {
                                     val ackPacket = SyncPacket(
                                         packetId = UUID.randomUUID().toString(),

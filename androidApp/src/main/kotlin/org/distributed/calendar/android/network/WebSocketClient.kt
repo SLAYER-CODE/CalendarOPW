@@ -118,6 +118,10 @@ class AndroidWebSocketClient(
                                         continue
                                     }
 
+                                    if (packet.type == PacketType.SYNC_RESPONSE) {
+                                        syncEngine?.updateDeviceIp(packet.deviceId, host)
+                                    }
+
                                     syncEngine?.applyPacket(packet)
 
                                     val ackPacket = SyncPacket(

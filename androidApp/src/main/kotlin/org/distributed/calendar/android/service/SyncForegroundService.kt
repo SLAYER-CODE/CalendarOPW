@@ -29,6 +29,7 @@ import org.distributed.calendar.common.PendingPacketStore
 import org.distributed.calendar.common.TcpPeerScanner
 import org.distributed.calendar.common.model.Event
 import org.distributed.calendar.core.device.DeviceRegistry
+import org.distributed.calendar.core.device.KnownPeersStore
 import org.distributed.calendar.core.sync.PacketResender
 import org.distributed.calendar.core.sync.SyncEngine
 import java.io.File
@@ -76,6 +77,12 @@ class SyncForegroundService : Service() {
                 val eventRepo = AndroidEventRepository(driver)
                 val engine = SyncEngine(eventRepo)
                 syncEngine = engine
+
+                val knownPeersFile = File(
+                    this@SyncForegroundService.filesDir, "known_peers.json"
+                )
+                engine.knownPeersStore = KnownPeersStore(knownPeersFile)
+                engine.loadKnownPeers()
 
                 val prefs = this@SyncForegroundService
                     .getSharedPreferences(PREFS_FILE, Context.MODE_PRIVATE)
@@ -126,7 +133,7 @@ class SyncForegroundService : Service() {
                         serverIp = TcpPeerScanner.scan(8080)
                     }
                     if (serverIp != null) {
-                        val localIPs = NetworkUtils.getLocalIPv4Addresses()
+                        val localIPs = NetworkUtils.getAllLocalIPv4Addresses()
                         if (serverIp in localIPs) {
                             println("Ignoring self-IP: $serverIp")
                             delay(5_000)

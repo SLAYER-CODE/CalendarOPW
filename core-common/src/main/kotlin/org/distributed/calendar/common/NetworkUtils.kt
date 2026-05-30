@@ -13,6 +13,10 @@ object NetworkUtils {
             .toSet()
     }
 
+    fun getAllLocalIPv4Addresses(): Set<String> {
+        return getLocalIPv4Addresses() + "127.0.0.1"
+    }
+
     fun getBroadcastAddresses(): Set<InetAddress> {
         val result = mutableSetOf<InetAddress>()
         try {
