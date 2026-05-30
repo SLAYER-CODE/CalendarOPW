@@ -1,9 +1,13 @@
 package org.distributed.calendar.android
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
@@ -12,6 +16,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import org.distributed.calendar.android.service.SyncForegroundService
 import org.distributed.calendar.common.model.Device
 import org.distributed.calendar.common.model.Event
@@ -43,12 +48,40 @@ private fun Device.toPeerUiModel() = PeerUiModel(
 
 class MainActivity : ComponentActivity() {
 
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            println("Notification permission granted")
+            startSyncService()
+        } else {
+            println("Notification permission denied — service cannot run")
+        }
+    }
+
+    private fun requestNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(
+                    this, Manifest.permission.POST_NOTIFICATIONS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationPermissionLauncher.launch(
+                    Manifest.permission.POST_NOTIFICATIONS
+                )
+                return
+            }
+        }
+        startSyncService()
+    }
+
+    private fun startSyncService() {
+        startService(Intent(this, SyncForegroundService::class.java))
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        startService(
-            Intent(this, SyncForegroundService::class.java)
-        )
+        requestNotificationPermission()
 
         setContent {
             CalendarTheme {
@@ -68,6 +101,11 @@ class MainActivity : ComponentActivity() {
                     e.addChangeListener {
                         events = e.getEvents().map { it.toUiModel() }
                         peers = e.getDevices().map { it.toPeerUiModel() }
+                    }
+                    while (true) {
+                        kotlinx.coroutines.delay(5_000)
+                        peers = e.getDevices().map { it.toPeerUiModel() }
+                        events = e.getEvents().map { it.toUiModel() }
                     }
                 }
 

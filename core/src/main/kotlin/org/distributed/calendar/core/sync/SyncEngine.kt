@@ -135,6 +135,20 @@ class SyncEngine(
     }
 
     private fun handleSyncRequest(packet: SyncPacket) {
+        val device = devices[packet.deviceId]
+        if (device != null) {
+            devices[packet.deviceId] = device.copy(lastSeen = packet.timestamp, isOnline = true)
+        } else {
+            devices[packet.deviceId] = Device(
+                deviceId = packet.deviceId,
+                name = packet.deviceId,
+                type = DeviceType.ANDROID,
+                lastSeen = packet.timestamp,
+                isOnline = true
+            )
+        }
+        DeviceRegistry.heartbeat(packet.deviceId)
+
         val allEvents = events.values.toList()
         val payload = json.encodeToString(allEvents)
         val response = SyncPacket(
@@ -151,9 +165,24 @@ class SyncEngine(
             }
             println("Sent SYNC_RESPONSE with ${allEvents.size} events to ${packet.deviceId}")
         }
+        notifyChange()
     }
 
     private fun handleSyncResponse(packet: SyncPacket) {
+        val device = devices[packet.deviceId]
+        if (device != null) {
+            devices[packet.deviceId] = device.copy(lastSeen = packet.timestamp, isOnline = true)
+        } else {
+            devices[packet.deviceId] = Device(
+                deviceId = packet.deviceId,
+                name = packet.deviceId,
+                type = DeviceType.ANDROID,
+                lastSeen = packet.timestamp,
+                isOnline = true
+            )
+        }
+        DeviceRegistry.heartbeat(packet.deviceId)
+
         val remoteEvents: List<Event> = json.decodeFromString(packet.payload)
         var merged = 0
         for (event in remoteEvents) {
@@ -168,8 +197,8 @@ class SyncEngine(
         }
         if (merged > 0) {
             println("Merged $merged events from SYNC_RESPONSE")
-            notifyChange()
         }
+        notifyChange()
     }
 
     // ─── Broadcast with fallback to pending queue ───────────────────────────

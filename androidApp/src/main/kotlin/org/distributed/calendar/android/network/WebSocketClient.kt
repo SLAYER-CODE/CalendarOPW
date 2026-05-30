@@ -19,8 +19,12 @@ import org.distributed.calendar.common.DeviceManager
 import org.distributed.calendar.common.model.*
 import org.distributed.calendar.common.PacketSerializer
 import org.distributed.calendar.core.network.WebSocketClient
+import org.distributed.calendar.core.sync.SyncEngine
 
-class AndroidWebSocketClient(private val context: Context) : WebSocketClient {
+class AndroidWebSocketClient(
+    private val context: Context,
+    private val syncEngine: SyncEngine? = null
+) : WebSocketClient {
 
     private val client = HttpClient(OkHttp) { install(WebSockets) }
     private val pendingStore = org.distributed.calendar.android.AndroidPendingPacketStore(context)
@@ -80,13 +84,31 @@ class AndroidWebSocketClient(private val context: Context) : WebSocketClient {
                         }
                     }
 
+                    // Send SYNC_REQUEST to get remote state
+                    try {
+                        val syncReq = SyncPacket(
+                            packetId = UUID.randomUUID().toString(),
+                            type = PacketType.SYNC_REQUEST,
+                            deviceId = DeviceManager.deviceId,
+                            timestamp = System.currentTimeMillis(),
+                            payload = ""
+                        )
+                        pendingStore.add(syncReq)
+                        sendPacket(syncReq)
+                        lastSentMillis[syncReq.packetId] = System.currentTimeMillis()
+                        inFlight.add(syncReq.packetId)
+                        println("SYNC_REQUEST sent")
+                    } catch (e: Exception) {
+                        println("SYNC_REQUEST send failed: ${e.message}")
+                    }
+
                     try {
                         for (incomingFrame in incoming) {
                             if (incomingFrame is Frame.Text) {
                                 val text = incomingFrame.readText()
                                 try {
                                     val packet = PacketSerializer.deserialize(text)
-                                    println("Received packet: $packet")
+                                    println("Received packet: ${packet.type} from ${packet.deviceId}")
                                     if (packet.type == PacketType.ACK) {
                                         val ackedId = packet.payload
                                         pendingStore.acknowledge(ackedId)
@@ -95,6 +117,9 @@ class AndroidWebSocketClient(private val context: Context) : WebSocketClient {
                                         println("ACK processed for: $ackedId")
                                         continue
                                     }
+
+                                    syncEngine?.applyPacket(packet)
+
                                     val ackPacket = SyncPacket(
                                         packetId = UUID.randomUUID().toString(),
                                         type = PacketType.ACK,
@@ -126,8 +151,5 @@ class AndroidWebSocketClient(private val context: Context) : WebSocketClient {
     private suspend fun DefaultClientWebSocketSession.sendPacket(packet: SyncPacket) {
         val serialized = PacketSerializer.serialize(packet)
         send(Frame.Text(serialized))
-    }
-
-    private suspend fun sendPacket(packet: SyncPacket) {
     }
 }

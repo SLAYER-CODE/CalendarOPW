@@ -17,8 +17,11 @@ import org.distributed.calendar.common.PacketSerializer
 import org.distributed.calendar.common.PendingPacketStore
 import org.distributed.calendar.common.model.*
 import org.distributed.calendar.core.network.WebSocketClient
+import org.distributed.calendar.core.sync.SyncEngine
 
-class LnxWebSocketClient : WebSocketClient {
+class LnxWebSocketClient(
+    private val syncEngine: SyncEngine? = null
+) : WebSocketClient {
 
     private val client = HttpClient(CIO) { install(WebSockets) }
     private val inFlight = mutableSetOf<String>()
@@ -111,6 +114,8 @@ class LnxWebSocketClient : WebSocketClient {
                                         println("ACK processed: ${packet.payload}")
                                         continue
                                     }
+
+                                    syncEngine?.applyPacket(packet)
 
                                     // Send ACK for non-ACK packets
                                     val ackPacket = SyncPacket(

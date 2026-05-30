@@ -15,13 +15,16 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.distributed.calendar.common.DeviceManager
+import org.distributed.calendar.common.NetworkUtils
 import org.distributed.calendar.common.PacketDeduplicator
 import org.distributed.calendar.common.PendingPacketStore
+import org.distributed.calendar.common.TcpPeerScanner
 import org.distributed.calendar.common.model.Device
 import org.distributed.calendar.common.model.Event
 import org.distributed.calendar.core.device.DeviceRegistry
 import org.distributed.calendar.core.sync.PacketResender
 import org.distributed.calendar.core.sync.SyncEngine
+import org.distributed.calendar.linux.LinuxNotifier
 import org.distributed.calendar.linux.discovery.LnxDiscoveryBroadcaster
 import org.distributed.calendar.linux.discovery.LnxDiscoveryListener
 import org.distributed.calendar.linux.network.LnxWebSocketClient
@@ -31,7 +34,6 @@ import org.distributed.calendar.ui.model.EventUiModel
 import org.distributed.calendar.ui.model.PeerUiModel
 import org.distributed.calendar.ui.theme.CalendarTheme
 import java.awt.Color
-import java.awt.Toolkit
 import java.awt.image.BufferedImage
 import java.io.File
 
@@ -61,23 +63,37 @@ private fun createTrayIcon(): BitmapPainter {
 }
 
 fun main() {
-    val screen = Toolkit.getDefaultToolkit().screenSize
-    println("Screen: ${screen.width}x${screen.height}")
     println("Starting linuxApp P2P node (device: ${DeviceManager.deviceId})")
+    NetworkUtils.printLocalAddresses()
 
     PendingPacketStore.setPersistDir(File("pending_packets"))
 
     val syncEngine = SyncEngine()
     val scope = CoroutineScope(Dispatchers.IO)
+    val knownEventIds = mutableSetOf<String>()
+
+    LinuxNotifier.synchronizing()
+    LinuxNotifier.searchStarted()
 
     scope.launch { LnxDiscoveryBroadcaster().startBroadcast() }
     scope.launch { LnxWebSocketServer(syncEngine).start(8080) }
     scope.launch {
         while (true) {
-            val serverIp = LnxDiscoveryListener().listen()
+            var serverIp = LnxDiscoveryListener().listen()
+            if (serverIp == null) {
+                println("UDP discovery timed out — trying TCP scan...")
+                serverIp = TcpPeerScanner.scan(8080)
+            }
             if (serverIp != null) {
+                val localIPs = NetworkUtils.getLocalIPv4Addresses()
+                if (serverIp in localIPs) {
+                    println("Ignoring self-IP: $serverIp")
+                    delay(5_000)
+                    continue
+                }
                 println("Peer discovered: $serverIp")
-                LnxWebSocketClient().connect(serverIp, 8080)
+                LinuxNotifier.peerFound(serverIp)
+                LnxWebSocketClient(syncEngine).connect(serverIp, 8080)
                 break
             }
             delay(5_000)
@@ -94,10 +110,32 @@ fun main() {
         }
     }
 
+    // Seed known event IDs so we only notify about NEW events
+    syncEngine.getEvents().forEach { knownEventIds.add(it.id) }
+
+    // Register notification listener for new remote events
+    syncEngine.addChangeListener {
+        val current = syncEngine.getEvents()
+        val localId = DeviceManager.deviceId
+        val newRemote = current.filter { e ->
+            e.id !in knownEventIds && e.sourceDeviceId != localId
+        }
+        if (newRemote.isNotEmpty()) {
+            newRemote.forEach { knownEventIds.add(it.id) }
+            newRemote.forEach { event ->
+                val device = syncEngine.getDevices()
+                    .find { it.deviceId == event.sourceDeviceId }
+                val name = device?.name ?: event.sourceDeviceId.take(8)
+                val summary = event.title
+                LinuxNotifier.eventReceived(summary, name)
+            }
+        }
+    }
+
     application {
         val windowState = rememberWindowState(
-            width = screen.width.dp,
-            height = screen.height.dp
+            width = 500.dp,
+            height = 500.dp
         )
         var isVisible by remember { mutableStateOf(true) }
         var events by remember { mutableStateOf(listOf<EventUiModel>()) }
@@ -107,6 +145,14 @@ fun main() {
             syncEngine.addChangeListener {
                 events = syncEngine.getEvents().map { it.toUiModel() }
                 peers = syncEngine.getDevices().map { it.toPeerUiModel() }
+            }
+        }
+
+        LaunchedEffect(Unit) {
+            while (true) {
+                delay(5_000)
+                peers = syncEngine.getDevices().map { it.toPeerUiModel() }
+                events = syncEngine.getEvents().map { it.toUiModel() }
             }
         }
 

@@ -37,27 +37,36 @@ class AndroidWebSocketServer(
             routing {
                 webSocket("/sync") {
                     println("Client connected")
-                    for (frame in incoming) {
-                        if (frame is Frame.Text) {
-                            val text = frame.readText()
-                            val packet = PacketSerializer.deserialize(text)
-                            val peerSession = AndroidPeerSession(packet.deviceId, this)
-                            SessionRegistry.register(packet.deviceId, peerSession)
-                            DeviceRegistry.heartbeat(packet.deviceId)
-                            syncEngine.applyPacket(packet)
-                            if (packet.type != PacketType.ACK) {
-                                val ackPacket = SyncPacket(
-                                    packetId = UUID.randomUUID().toString(),
-                                    type = PacketType.ACK,
-                                    deviceId = DeviceManager.deviceId,
-                                    timestamp = System.currentTimeMillis(),
-                                    payload = packet.packetId
-                                )
-                                val serializedAck = PacketSerializer.serialize(ackPacket)
-                                send(Frame.Text(serializedAck))
+                    var connectedDeviceId: String? = null
+                    try {
+                        for (frame in incoming) {
+                            if (frame is Frame.Text) {
+                                val text = frame.readText()
+                                val packet = PacketSerializer.deserialize(text)
+                                connectedDeviceId = packet.deviceId
+                                val peerSession = AndroidPeerSession(packet.deviceId, this)
+                                SessionRegistry.register(packet.deviceId, peerSession)
+                                DeviceRegistry.heartbeat(packet.deviceId)
+                                syncEngine.applyPacket(packet)
+                                if (packet.type != PacketType.ACK) {
+                                    val ackPacket = SyncPacket(
+                                        packetId = UUID.randomUUID().toString(),
+                                        type = PacketType.ACK,
+                                        deviceId = DeviceManager.deviceId,
+                                        timestamp = System.currentTimeMillis(),
+                                        payload = packet.packetId
+                                    )
+                                    val serializedAck = PacketSerializer.serialize(ackPacket)
+                                    send(Frame.Text(serializedAck))
+                                }
+                                println(DeviceRegistry.getOnlineDevices())
+                                println("Received packet: $packet")
                             }
-                            println(DeviceRegistry.getOnlineDevices())
-                            println("Received packet: $packet")
+                        }
+                    } finally {
+                        connectedDeviceId?.let { id ->
+                            SessionRegistry.remove(id)
+                            println("Session cleaned up: $id")
                         }
                     }
                 }
